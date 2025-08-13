@@ -371,6 +371,24 @@ func TestProcessWithOptions(t *testing.T) {
 	}
 }
 
+func TestDoubleUnderscore(t *testing.T) {
+	var s Specification
+	os.Clearenv()
+	os.Setenv("ENV_CONFIG__REQUIREDVAR", "foo")
+	if err := ProcessWithOptions("env_config", &s, Options{DoubleUnderscore: true}); err != nil {
+		t.Error(err.Error())
+	}
+}
+
+func TestDoubleUnderscoreAndSplitWords(t *testing.T) {
+	var s Specification
+	os.Clearenv()
+	os.Setenv("ENV_CONFIG__REQUIRED_VAR", "foo")
+	if err := ProcessWithOptions("env_config", &s, Options{SplitWords: true, DoubleUnderscore: true}); err != nil {
+		t.Error(err.Error())
+	}
+}
+
 func TestParseErrorBool(t *testing.T) {
 	var s Specification
 	os.Clearenv()

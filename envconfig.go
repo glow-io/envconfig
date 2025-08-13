@@ -26,7 +26,8 @@ var (
 
 // Options to change default parsing.
 type Options struct {
-	SplitWords bool
+	SplitWords       bool
+	DoubleUnderscore bool
 }
 
 // A ParseError occurs when an environment variable cannot be converted to
@@ -76,6 +77,11 @@ func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, er
 		return nil, ErrInvalidSpecification
 	}
 	typeOfSpec := s.Type()
+
+	separator := "_"
+	if options.DoubleUnderscore {
+		separator = "__"
+	}
 
 	// over allocate an info array, we will extend if needed later
 	infos := make([]varInfo, 0, s.NumField())
@@ -131,7 +137,7 @@ func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, er
 			info.Key = info.Alt
 		}
 		if prefix != "" {
-			info.Key = fmt.Sprintf("%s_%s", prefix, info.Key)
+			info.Key = prefix + separator + info.Key
 		}
 		info.Key = strings.ToUpper(info.Key)
 		infos = append(infos, info)

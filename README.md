@@ -126,6 +126,9 @@ err := envconfig.ProcessWithOptions("myapp", &s, envconfig.Options{SplitWords: t
 if err != nil {
     log.Fatal(err)
 }
+
+// If you also want to change the separator between nested struct names from a single underscore to a double underscore, you can use:
+envconfig.ProcessWithOptions("myapp", &s, envconfig.Options{SplitWords: true, DoubleUnderscore: true})
 ```
 
 ```Bash
