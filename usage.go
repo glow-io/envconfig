@@ -169,7 +169,7 @@ func Usaget(prefix string, spec interface{}, out io.Writer, tmpl *template.Templ
 // UsagetWithOptions is like Usaget() but with specified options.
 func UsagetWithOptions(prefix string, spec interface{}, out io.Writer, tmpl *template.Template, options Options) error {
 	// gather first
-	infos, err := gatherInfo(prefix, spec, options)
+	infos, err := gatherInfo(prefix, spec, options, false)
 	if err != nil {
 		return err
 	}

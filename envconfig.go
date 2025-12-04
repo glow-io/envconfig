@@ -66,7 +66,7 @@ type varInfo struct {
 }
 
 // GatherInfo gathers information about the specified struct
-func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, error) {
+func gatherInfo(prefix string, spec interface{}, options Options, parentIgnored bool) ([]varInfo, error) {
 	s := reflect.ValueOf(spec)
 
 	if s.Kind() != reflect.Ptr {
@@ -88,9 +88,10 @@ func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, er
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
 		ftype := typeOfSpec.Field(i)
-		if !f.CanSet() || isTrue(ftype.Tag.Get("ignored")) {
+		if !f.CanSet() {
 			continue
 		}
+		ignored := parentIgnored || isTrue(ftype.Tag.Get("ignored"))
 
 		for f.Kind() == reflect.Ptr {
 			if f.IsNil() {
@@ -140,6 +141,10 @@ func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, er
 			info.Key = prefix + separator + info.Key
 		}
 		info.Key = strings.ToUpper(info.Key)
+
+		if ignored {
+			info.Key = ""
+		}
 		infos = append(infos, info)
 
 		if f.Kind() == reflect.Struct {
@@ -151,7 +156,7 @@ func gatherInfo(prefix string, spec interface{}, options Options) ([]varInfo, er
 				}
 
 				embeddedPtr := f.Addr().Interface()
-				embeddedInfos, err := gatherInfo(innerPrefix, embeddedPtr, options)
+				embeddedInfos, err := gatherInfo(innerPrefix, embeddedPtr, options, ignored)
 				if err != nil {
 					return nil, err
 				}
@@ -173,7 +178,7 @@ func CheckDisallowed(prefix string, spec interface{}) error {
 
 // CheckDisallowedWithOptions is like CheckDisallowed() but with specified options.
 func CheckDisallowedWithOptions(prefix string, spec interface{}, options Options) error {
-	infos, err := gatherInfo(prefix, spec, options)
+	infos, err := gatherInfo(prefix, spec, options, false)
 	if err != nil {
 		return err
 	}
@@ -207,7 +212,7 @@ func Process(prefix string, spec interface{}) error {
 
 // ProcessWithOptions is like Process() but with specified options.
 func ProcessWithOptions(prefix string, spec interface{}, options Options) error {
-	infos, err := gatherInfo(prefix, spec, options)
+	infos, err := gatherInfo(prefix, spec, options, false)
 
 	for _, info := range infos {
 

@@ -159,8 +159,8 @@ type Specification struct {
 }
 ```
 
-Envconfig won't process a field with the "ignored" tag set to "true", even if a corresponding
-environment variable is set.
+Envconfig won't read values from environment variables for a field with the "ignored" tag set to "true", even if a
+corresponding environment variable is set. Defaults will still be applied.
 
 ## Supported Struct Field Types
 

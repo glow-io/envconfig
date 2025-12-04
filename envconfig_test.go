@@ -60,6 +60,7 @@ type Specification struct {
 	NoPrefixDefault              string  `envconfig:"BROKER" default:"127.0.0.1"`
 	RequiredDefault              string  `required:"true" default:"foo2bar"`
 	Ignored                      string  `ignored:"true"`
+	IgnoredDefault               string  `ignored:"true" default:"ignored default"`
 	NestedSpecification          struct {
 		Property            string `envconfig:"inner"`
 		PropertyWithDefault string `default:"fuzzybydefault"`
@@ -73,17 +74,18 @@ type Specification struct {
 }
 
 type Embedded struct {
-	Enabled             bool `desc:"some embedded value"`
-	EmbeddedPort        int
-	MultiWordVar        string
-	MultiWordVarWithAlt string `envconfig:"MULTI_WITH_DIFFERENT_ALT"`
-	EmbeddedAlt         string `envconfig:"EMBEDDED_WITH_ALT"`
-	EmbeddedIgnored     string `ignored:"true"`
+	Enabled                bool `desc:"some embedded value"`
+	EmbeddedPort           int
+	MultiWordVar           string
+	MultiWordVarWithAlt    string `envconfig:"MULTI_WITH_DIFFERENT_ALT"`
+	EmbeddedAlt            string `envconfig:"EMBEDDED_WITH_ALT"`
+	EmbeddedIgnored        string `ignored:"true"`
+	EmbeddedIgnoredDefault string `ignored:"true" default:"embedded ignored default"`
 }
 
 type EmbeddedButIgnored struct {
 	FirstEmbeddedButIgnored  string
-	SecondEmbeddedButIgnored string
+	SecondEmbeddedButIgnored string `default:"embedded but ignored default"`
 }
 
 func TestProcess(t *testing.T) {
@@ -160,6 +162,10 @@ func TestProcess(t *testing.T) {
 	}
 	if s.Ignored != "" {
 		t.Errorf("expected empty string, got %#v", s.Ignored)
+	}
+	expected = "ignored default"
+	if s.IgnoredDefault != expected {
+		t.Errorf("expected %s, got %#v", expected, s.IgnoredDefault)
 	}
 
 	if len(s.ColorCodes) != 3 ||
@@ -308,6 +314,10 @@ func TestProcessWithOptions(t *testing.T) {
 
 	if s.Ignored != "" {
 		t.Errorf("expected empty string, got %#v", s.Ignored)
+	}
+	expected = "ignored default"
+	if s.IgnoredDefault != expected {
+		t.Errorf("expected %s, got %#v", expected, s.IgnoredDefault)
 	}
 
 	if len(s.ColorCodes) != 3 ||
@@ -729,7 +739,11 @@ func TestEmbeddedStruct(t *testing.T) {
 		t.Errorf("expected %s, got %s", "foobaz", *s.SomePointer)
 	}
 	if s.EmbeddedIgnored != "" {
-		t.Errorf("expected empty string, got %#v", s.Ignored)
+		t.Errorf("expected empty string, got %#v", s.EmbeddedIgnored)
+	}
+	expected := "embedded ignored default"
+	if s.EmbeddedIgnoredDefault != expected {
+		t.Errorf("expected %s, got %#v", expected, s.EmbeddedIgnoredDefault)
 	}
 }
 
@@ -743,10 +757,11 @@ func TestEmbeddedButIgnoredStruct(t *testing.T) {
 		t.Error(err.Error())
 	}
 	if s.FirstEmbeddedButIgnored != "" {
-		t.Errorf("expected empty string, got %#v", s.Ignored)
+		t.Errorf("expected empty string, got %#v", s.FirstEmbeddedButIgnored)
 	}
-	if s.SecondEmbeddedButIgnored != "" {
-		t.Errorf("expected empty string, got %#v", s.Ignored)
+	expected := "embedded but ignored default"
+	if s.SecondEmbeddedButIgnored != expected {
+		t.Errorf("expected %s, got %#v", expected, s.SecondEmbeddedButIgnored)
 	}
 }
 
@@ -962,6 +977,17 @@ func TestCheckDisallowedIgnored(t *testing.T) {
 	}
 }
 
+func TestCheckDisallowedIgnoredDefault(t *testing.T) {
+	var s Specification
+	os.Clearenv()
+	os.Setenv("ENV_CONFIG_DEBUG", "true")
+	os.Setenv("ENV_CONFIG_IGNORED_DEFAULT", "false")
+	err := CheckDisallowed("env_config", &s)
+	if experr := "unknown environment variable ENV_CONFIG_IGNORED_DEFAULT"; err.Error() != experr {
+		t.Errorf("expected %s, got %s", experr, err)
+	}
+}
+
 func TestErrorMessageForRequiredAltVar(t *testing.T) {
 	var s struct {
 		Foo string `envconfig:"BAR" required:"true"`
@@ -1029,6 +1055,6 @@ func BenchmarkGatherInfo(b *testing.B) {
 	os.Setenv("ENV_CONFIG_MULTI_WORD_VAR_WITH_AUTO_SPLIT", "24")
 	for i := 0; i < b.N; i++ {
 		var s Specification
-		gatherInfo("env_config", &s, Options{})
+		gatherInfo("env_config", &s, Options{}, false)
 	}
 }
